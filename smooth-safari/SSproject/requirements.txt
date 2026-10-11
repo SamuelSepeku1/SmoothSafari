@@ -1,0 +1,13 @@
+# Install torch and torchvision FIRST, separately, from the CPU index (do not put them here):
+#   pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+opencv-python
+ultralytics
+supervision
+numpy
+fastapi
+uvicorn
+python-dotenv
+matplotlib
+osmnx
+networkx
+scikit-learn
