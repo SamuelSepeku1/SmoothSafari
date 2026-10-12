@@ -23,7 +23,7 @@ MIN_GREEN_SECONDS = 10       # every lane gets at least this much, even if empty
 MAX_GREEN_SECONDS = 35       # cap so one lane can't take the whole cycle
 SMOOTHING_WINDOW = 10        # number of recent frame-records averaged per lane
 
-CONGESTION_THRESHOLD = 12    # total vehicles across all lanes that counts as "congested"
+CONGESTION_THRESHOLD = 6   # total vehicles across all lanes that counts as "congested"
 
 # -----------------------------------------
 

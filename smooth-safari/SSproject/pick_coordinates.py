@@ -31,7 +31,7 @@ def click_event(event, x, y, flags, param):
         cv2.imshow("frame", frame)
 
 
-cap = cv2.VideoCapture("27260-362770008.mp4")
+cap = cv2.VideoCapture("Vehicle Dataset Sample 2(720P_HD).mp4")
 ret, frame = cap.read()
 cap.release()
 

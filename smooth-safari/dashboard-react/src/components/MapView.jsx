@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  CircleMarker,
-  Popup,
-  Polyline,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { MapContainer,TileLayer,CircleMarker,Popup,Polyline,Tooltip,useMap } from "react-leaflet";
 import { INTERSECTION as FALLBACK, API_URL } from "../config";
 
 // Zooms the map so the whole route is visible whenever the route changes
@@ -24,26 +16,45 @@ export default function MapView({ congested }) {
   const [info, setInfo] = useState(null);
   const [error, setError] = useState(null);
 
-  // Ask the backend for the Dijkstra route that matches the live congestion state
+  // Ask the backend for the Dijkstra route that matches the live congestion state.
+  // If the server is not reachable yet (still starting, restarted, wrong port), keep
+  // retrying every 4 seconds so the map recovers on its own.
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_URL}/api/route?congested=${isCongested}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        if (data.error) {
-          setError(data.error);
-          setInfo(null);
-        } else {
-          setError(null);
-          setInfo(data);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError("Route service not reachable. Is liveserver.py running?");
-      });
+    let timer = null;
+
+    const load = () => {
+      fetch(`${API_URL}/api/route?congested=${isCongested}`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`server answered HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((data) => {
+          if (cancelled) return;
+          if (data.error) {
+            setError(data.error); // a real problem (for example the saved map); retrying will not fix it
+            setInfo(null);
+          } else {
+            setError(null);
+            setInfo(data);
+          }
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          const unreachable = e instanceof TypeError;
+          setError(
+            unreachable
+              ? `cannot reach the server at ${API_URL} (retrying...)`
+              : `${e.message} (retrying...)`
+          );
+          timer = setTimeout(load, 4000);
+        });
+    };
+
+    load();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [isCongested]);
 
@@ -108,7 +119,7 @@ export default function MapView({ congested }) {
           : !info
           ? "Loading route..."
           : isCongested
-          ? `Junction congested: Dijkstra found a path around the intersection (${info.length_m} m).`
+          ? `Junction congested: Dijkstra found a path around the intersection (${info.length_m} m, at least ${info.closest_approach_m} m away from it).`
           : `Traffic flowing: the shortest path goes through the intersection (${info.length_m} m).`}
       </p>
     </section>
